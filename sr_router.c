@@ -170,9 +170,49 @@ void sr_handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req,
       /*********************************************************************/
       /* TODO: send ICMP host uncreachable to the source address of all    */
       /* packets waiting on this request                                   */
+	  unsigned int replyLen = (sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t)
+	  uint8_t* replyFrame = malloc(replyLen);
+	  int id = 0;
+	  sr_ethernet_hdr_t* ethernetRely = (sr_ethernet_hdr_t *)reqst_pkt;
+      sr_ip_hdr_t* ipReply = (sr_ip_hdr_t*) (replyFrame+sizeof(sr_ethernet_hdr_t));
+	  sr_icmp_t3_hdr_t* icmpReply = (sr_icmp_t3_hdr_t*) (ipReply+sizeof(sr_ip_hdr_t)) ;
+	  sr_packet* pkt = req->packets;
+	  while (pkt != NULL) 
+	  {
+		sr_ethernet_hdr_t* ethernetFrame = (sr_ethernet_hdr*) (pkt)
+		sr_arp_hdr_t* arpPkt = (sr_apr_hdr_t*) (pkt + sizeof(sr_ethernet_hdr_t));
+		
+		// Fill out Ethernet Header
+		memcpy(ethernetReply->ether_dhost, ethernetFrame->ether_shot , ETHER_ADDR_LEN);
+		memcpy(ethernetReply->ether_shost, ethernetFrame->ether_dhost , ETHER_ADDR_LEN);
+		ethernetReply-> ether_type = 0x0800
+		
+			// Fill out IP Header
+		ipReply->ip_v = 4;
+		ipReply->ip_hl = 5;
+		ipReply->ip_tos = 0;
+		ipReply->ip_len = htons(sizeof(ipReply) + sizeof(icmpReply);
+		ipReply->ip_id = id; // No fragmentaion so ne need to worry
+		id++;
+	    ipReply->ip_off = htons(IP_DF);
+	    ipReply->ip_ttl = 20; // If things are timeing out to much increase
+	    ipReply->ip_p = 17;
+	    ipReply->ipsum = 0;
+		ipReply->ipsrc = arpPkt->ar_tip;
+		ipReply->dst = arpPkt->arsip;
+		ipReply->sum = cksum(ipReply, (ip_hl * 4));
 
+		// Fill out ICMP Header
+		icmpReply->icmp_type = 3;
+		icmpReply->icmp_code = 1;
+		icmpReply->icmp_sum = 0;
+		memcpy(icmpReply->data, arpPkt, ICMP_DATA_SIZE);
+		icmpReply->icmp_sum = cksum(icmpReply, sizeof(sr_icmp_t3_hdr_t));
 
-
+		sr_send_packet(sr,replyFrame,replyLen,pkt->iface);
+		free(replyFrame);
+		pkt = pkt->next;
+	  }
 
       /*********************************************************************/
 
@@ -249,8 +289,15 @@ void sr_handlepacket_arp(struct sr_instance *sr, uint8_t *pkt,
     {
       /*********************************************************************/
       /* TODO: send all packets on the req->packets linked list            */
-
-
+		sr_packet pkt = req->packets;
+		while (pkt != NULL)
+		{
+			sr_ethernet_hdr_t* ethernetFrame = (sr_ethernet_hdr_t*) pkt->buf;
+			memcpy(ethernetFrame->ether_dhost,req->, arphdr->ar_sha, ETHER_ADDR_LEN)
+			sr_send_packet(sr, ethernetFrame, pkt->len, pkt->iface);
+			free(ethernetFrame);
+			pkt = pkt->next;
+		}
 
       /*********************************************************************/
 
@@ -295,6 +342,24 @@ void sr_handlepacket(struct sr_instance* sr,
 
   /*************************************************************************/
   /* TODO: Handle packets                                                  */
+  var express = require('express');
+  var router = express.Router();
+
+  // middleware that is specific to this router
+  router.use(function timeLog(req, res, next) {
+	  console.log('Time: ', Date.now());
+	  next();
+  });
+  // define the home page route
+  router.get('/', function(req, res) {
+	  res.send('home page');
+  });
+  // define the about route
+  router.get('/about', function(req, res) {
+	  res.send('about home');
+  });
+
+  module.exports = router;
 
 
 
