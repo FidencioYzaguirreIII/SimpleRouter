@@ -199,7 +199,7 @@ void sr_handle_arpreq(struct sr_instance *sr, struct sr_arpreq *req,
 	    ipReply->ip_p = 17;
 	    ipReply->ipsum = 0;
 		ipReply->ipsrc = arpPkt->ar_tip;
-		ipReply->dst = arpPkt->arsip;
+		ipReply->dst = arpPkt->ar_sip;
 		ipReply->sum = cksum(ipReply, (ip_hl * 4));
 
 		// Fill out ICMP Header
